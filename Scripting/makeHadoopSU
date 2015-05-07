@@ -1,0 +1,19 @@
+dir=$1
+hdir=$2
+data=$3
+mkdir -p $dir/SU_red
+hadoop dfs -mkdir $data
+hadoop dfs -mkdir $hdir
+date
+date1=$(date +"%s")
+for i in `find $dir/SEGY -name "*.sgy" | awk -F"/" '{print $NF}' | egrep *.sgy`
+do
+j=`echo $i | awk -F"." '{print $1}'`;
+./suhdp load -input $dir/SEGY/$i -output $hdir/$j.su -cwproot /home/seismics/cwp/43R1
+./suhdp run -command "susort | sufxdecon " -input $hdir/$j.su -output $data/$j.su -cwproot /home/seismics/cwp/43R1
+hadoop dfs -copyToLocal $data/$j.su $dir/SU_red/
+done
+date
+date2=$(date +"%s")
+diff=$(($date2-$date1))
+echo "$(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed."
